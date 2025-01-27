@@ -48,8 +48,14 @@ mediatek_setup_interfaces()
 	*rax3000m*)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" wan
 		;;
+	# *nokia,ea0326gmp*)
+	# 	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" wan
+	# 	;;
+	*newland,nl-wr9103* |\
 	*nokia,ea0326gmp*)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" wan
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+		ucidef_add_switch "switch0" \
+			"1:lan" "2:lan" "3:lan" "6u@eth0"
 		;;
 	*mt3000* |\
 	glinet,x3000-emmc |\
@@ -279,6 +285,11 @@ mediatek_setup_macs()
 		wifi_mac="$(macaddr_add $lan_mac 2)"
 		sed -i '/MacAddress=$wifi_mac/d' /etc/wireless/mediatek/mt7981.dbdc.b1.dat
 		echo "MacAddress=$wifi_mac" >> /etc/wireless/mediatek/mt7981.dbdc.b1.dat
+		;;
+	*newland,nl-wr8103*)
+		local wifi_mac=$(mtd_get_mac_binary Factory 0x4)
+		lan_mac=$(macaddr_add $wifi_mac -1)
+		wan_mac=$(macaddr_add $wifi_mac -2)
 		;;
 	nradio,wt9103)
 		lan_mac=$(mtd_get_mac_ascii bdinfo "fac_mac ")
