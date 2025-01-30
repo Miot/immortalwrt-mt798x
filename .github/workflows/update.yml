@@ -1,0 +1,43 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    - cron: '0 5 * * 0'  # 每周日凌晨 5:00 运行
+  workflow_dispatch:      # 允许手动触发
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Add upstream repository
+        run: |
+          git remote add upstream https://github.com/padavanonly/immortalwrt-mt798x.git
+          git fetch upstream
+      
+      - name: Sync upstream changes
+        run: |
+          git checkout main
+          LOCAL_HASH=$(git rev-parse @{u})
+          REMOTE_HASH=$(git ls-remote upstream main | cut -f1)
+          if [ "$LOCAL_HASH" = "$REMOTE_HASH" ]; then
+            echo "Already up to date with upstream"
+            exit 0
+          fi
+          git merge upstream/main --no-edit
+        
+      - name: Push changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git config --global user.name 'GitHub Action'
+            git config --global user.email 'action@github.com'
+            git push origin main
+            echo "Changes pushed successfully"
+          else
+            echo "No changes to push"
+          fi
